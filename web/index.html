@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Painel TSE · Presidente 2026 · 2º turno</title>
+  <meta name="description" content="Acompanhe em tempo real a apuração da eleição presidencial de 2026 (2º turno) com dados oficiais do TSE: votos, percentuais, fotos dos candidatos, evolução por estado e mapa por município." />
+  <meta name="color-scheme" content="dark light" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <a class="skip" href="#conteudo">Ir para o conteúdo</a>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 32 32" width="22" height="22" fill="none">
+          <path d="M16 3 4 8v8c0 7 5 11.5 12 13 7-1.5 12-6 12-13V8L16 3Z" fill="currentColor" opacity=".18"/>
+          <path d="M16 3 4 8v8c0 7 5 11.5 12 13 7-1.5 12-6 12-13V8L16 3Z" stroke="currentColor" stroke-width="1.8"/>
+          <path d="m11 16 3.4 3.4L21.5 12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+      <span class="brand-text">
+        <strong>Painel TSE</strong>
+        <small>Apuração em tempo real</small>
+      </span>
+    </div>
+
+    <p class="contexto"><strong>Presidente</strong> · 2026 · 2º turno</p>
+
+    <div class="actions">
+      <button id="btnAtualizar" class="btn btn-ghost" type="button" title="Consultar o TSE agora">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true">
+          <path d="M20 11a8 8 0 1 0-2.3 6.3M20 5v6h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>Atualizar</span>
+      </button>
+
+      <label class="field field-inline" id="campoIntervalo">
+        <span>Auto</span>
+        <select id="selPoll" aria-label="Intervalo de atualização automática" autocomplete="off">
+          <option value="5000">5s</option>
+          <option value="10000" selected>10s</option>
+          <option value="30000">30s</option>
+          <option value="60000">60s</option>
+          <option value="0">Pausado</option>
+        </select>
+      </label>
+
+      <button id="btnTema" class="btn btn-icon" type="button" title="Alternar tema claro/escuro" aria-label="Alternar tema">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" aria-hidden="true">
+          <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <div class="live" id="live" data-estado="off" role="status">
+        <i class="dot" aria-hidden="true"></i>
+        <span id="liveTexto">Conectando</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="banner" id="banner" hidden role="alert">
+    <span id="bannerTexto"></span>
+    <button class="btn btn-ghost btn-sm" id="btnBanner" type="button">Tentar novamente</button>
+  </div>
+
+  <main id="conteudo">
+    <!-- HERO -->
+    <section class="hero panel" aria-labelledby="heroCargo">
+      <div class="hero-main">
+        <div class="eyebrow">
+          <span id="heroAno">—</span>
+          <span class="dot-sep">•</span>
+          <span id="heroTurno">—</span>
+          <span class="dot-sep">•</span>
+          <span id="heroTipo">—</span>
+        </div>
+        <h1>
+          <span id="heroCargo">Carregando…</span>
+          <span class="hero-uf" id="heroUf"></span>
+        </h1>
+        <p class="hero-sub" id="heroStatus">Buscando dados oficiais do TSE…</p>
+
+        <div class="progress" role="progressbar" aria-labelledby="heroSecoes" aria-valuemin="0" aria-valuemax="100" id="heroProgresso">
+          <div class="progress-bar" id="heroBar" style="width:0%"></div>
+        </div>
+        <div class="progress-lbl">
+          <span id="heroSecoes">0 de 0 seções apuradas</span>
+          <strong id="heroPct">0,00%</strong>
+        </div>
+      </div>
+
+      <div class="hero-side">
+        <div class="stamp">
+          <span>TSE</span>
+          <strong id="tseStamp">—</strong>
+          <small>última atualização oficial</small>
+        </div>
+        <div class="stamp">
+          <span>Painel</span>
+          <strong id="syncStamp">—</strong>
+          <small id="syncNota">aguardando primeira consulta</small>
+        </div>
+      </div>
+    </section>
+
+    <!-- KPIs -->
+    <section class="kpis" id="kpis" aria-label="Indicadores da apuração"></section>
+
+    <!-- MAPA POR MUNICÍPIO -->
+    <section class="panel mapa" id="painelMapa" aria-labelledby="tituloMapa" hidden>
+      <header class="panel-head">
+        <div>
+          <h2 id="tituloMapa">Mapa por município</h2>
+          <p class="panel-sub" id="subMapa">Cada cidade pintada com a cor do candidato mais votado</p>
+        </div>
+        <div class="chips" id="chipsMapa"></div>
+      </header>
+
+      <div class="mapa-corpo">
+        <div class="mapa-palco" id="mapaPalco">
+          <svg id="mapaBrasil" role="img" aria-label="Mapa do Brasil com os municípios coloridos pelo candidato mais votado"></svg>
+          <div class="mapa-dica" id="mapaDica" hidden></div>
+          <div class="mapa-status" id="mapaStatus">Carregando o mapa…</div>
+        </div>
+
+        <aside class="mapa-lado" aria-label="Legenda e progresso do mapa">
+          <div class="mapa-legenda" id="mapaLegenda"></div>
+
+          <div class="mapa-progresso" id="mapaProgresso"></div>
+
+          <div class="mapa-acoes">
+            <button class="btn btn-sm" id="btnMapaMais" type="button" title="Ampliar o mapa" aria-label="Ampliar o mapa">+</button>
+            <button class="btn btn-sm" id="btnMapaMenos" type="button" title="Reduzir o mapa" aria-label="Reduzir o mapa">−</button>
+            <button class="btn btn-sm" id="btnMapaReset" type="button">Ver Brasil inteiro</button>
+          </div>
+
+          <p class="hint" id="hintMapa">
+            Passe o mouse sobre uma cidade para ver os votos. Use a roda do mouse para ampliar e arraste para navegar.
+          </p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- RESULTADO + GRÁFICOS -->
+    <section class="layout">
+      <div class="panel ranking">
+        <header class="panel-head">
+          <div>
+            <h2>Resultado por candidato</h2>
+            <p class="panel-sub" id="rankingSub">Votos válidos e percentual</p>
+          </div>
+          <div class="chips" id="rankingChips"></div>
+        </header>
+        <div id="listaCandidatos" class="lista" aria-live="polite"></div>
+      </div>
+
+      <aside class="side">
+        <div class="panel">
+          <header class="panel-head">
+            <h2>Distribuição dos votos</h2>
+          </header>
+          <div id="donut" class="donut-wrap"></div>
+        </div>
+
+        <div class="panel">
+          <header class="panel-head">
+            <h2>Evolução da apuração</h2>
+          </header>
+          <div id="graficoLinha" class="line-wrap"></div>
+          <p class="hint" id="hintLinha">O histórico começa a ser desenhado a partir da segunda atualização.</p>
+        </div>
+      </aside>
+    </section>
+
+    <!-- ACOMPANHAMENTO -->
+    <section class="panel" id="painelAcomp" hidden>
+      <header class="panel-head">
+        <div>
+          <h2 id="tituloAcomp">Acompanhamento por estado</h2>
+          <p class="panel-sub" id="subAcomp">Seções apuradas e comparecimento</p>
+        </div>
+        <div class="chips" id="chipsAcomp"></div>
+      </header>
+      <div id="tabelaAcomp" class="tabela-wrap"></div>
+    </section>
+
+    <p class="rodape">
+      Dados públicos da API de resultados do Tribunal Superior Eleitoral ·
+      <a href="https://resultados.tse.jus.br/oficial/app/index.html" target="_blank" rel="noopener">resultados.tse.jus.br</a>
+      <span class="rodape-sep">·</span>
+      Painel informativo desenvolvido por Cleydson Moura, sem vínculo oficial com o TSE.
+    </p>
+  </main>
+
+  <div class="skeleton" id="skeleton" hidden>
+    <div class="sk sk-hero"></div>
+    <div class="sk-row">
+      <div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div>
+    </div>
+    <div class="sk sk-lista"></div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
